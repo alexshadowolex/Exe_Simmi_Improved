@@ -1,6 +1,8 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import java.io.FileOutputStream
+import java.util.*
 
 plugins {
     kotlin("jvm") version "1.9.22"
@@ -48,6 +50,35 @@ dependencies {
     implementation(kotlin("script-runtime"))
 }
 
+val generatedVersionDir = "src\\main\\resources\\"
+
+sourceSets {
+    main {
+        kotlin {
+            output.dir(generatedVersionDir)
+        }
+    }
+}
+
+tasks.register("generateVersionProperties") {
+    doLast {
+        val propertiesFile = file("$generatedVersionDir\\buildInfo.properties")
+        propertiesFile.parentFile.mkdirs()
+        val properties = Properties()
+        properties.setProperty("version", "$version")
+        val out = FileOutputStream(propertiesFile)
+        properties.store(out, null)
+    }
+}
+
+tasks.named("processResources") {
+    dependsOn("generateVersionProperties")
+}
+
+tasks.withType<Jar> {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
+
 tasks.withType<KotlinCompile> {
     kotlin.sourceSets.all {
         languageSettings.apply {
@@ -70,7 +101,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "Exe_Simmi_Improved"
-            packageVersion = "1.0.0"
+            packageVersion = version.toString()
         }
     }
 }
