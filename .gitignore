@@ -1,16 +1,16 @@
-# Compiled class file
+### Compiled class file
 *.class
 
-# Log file
+### Log file
 *.log
 
-# BlueJ files
+### BlueJ files
 *.ctxt
 
-# Mobile Tools for Java (J2ME)
+### Mobile Tools for Java (J2ME)
 .mtj.tmp/
 
-# Package Files #
+### Package Files #
 *.jar
 *.war
 *.nar
@@ -19,6 +19,41 @@
 *.tar.gz
 *.rar
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+### Build Gradle etc.
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
-replay_pid*
+
+### IntelliJ IDEA ###
+.idea/modules.xml
+.idea/jarRepositories.xml
+.idea/compiler.xml
+.idea/libraries/
+.idea/.gitignore
+.idea/gradle.xml
+.idea/kotlinc.xml
+.idea/misc.xml
+.idea/vcs.xml
+.run/desktop.run.xml
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### Kotlin ###
+.kotlin
+
+### Mac OS ###
+.DS_Store
+
+
+### Custom Stuff
+### data folder (should be secret)
+data
