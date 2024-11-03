@@ -31,6 +31,7 @@ object TwitchBotConfig {
         load(twitchBotConfigFile.inputStream())
     }
 
+    val chatAccountToken = File("data\\tokens\\twitchToken.txt").readText()
 
     var channel: String = getPropertyValue(
         properties, "channel", twitchBotConfigFile.path

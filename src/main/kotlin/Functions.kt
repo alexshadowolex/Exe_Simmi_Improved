@@ -1,3 +1,8 @@
+import com.github.twitch4j.TwitchClient
+import com.github.twitch4j.chat.TwitchChat
+import config.TwitchBotConfig
+import dev.kord.core.Kord
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.datetime.Clock
 import kotlinx.datetime.toJavaInstant
 import java.io.FileOutputStream
@@ -9,6 +14,37 @@ import java.util.*
 import javax.swing.JOptionPane
 import kotlin.system.exitProcess
 
+// Setup Twitch Bot
+/**
+ * Sets up the connection to twitch
+ * @return {TwitchClient} the TwitchClient-class
+ */
+suspend fun setupTwitchBot(discordClient: Kord, backgroundCoroutineScope: CoroutineScope): TwitchClient? {
+    // TODO
+    return null
+}
+
+
+// Setup local clip server
+/**
+ * Hosts the local clip player server.
+ */
+fun hostClipPlayerServer() {
+    // TODO
+}
+
+
+// Twitch Bot Functions
+
+/**
+ * Helper function that sends a message to twitch chat and logs it
+ * @param chat {TitchChat} the twitch chat
+ * @param message {String} content of the message
+ */
+fun sendMessageToTwitchChatAndLogIt(chat: TwitchChat, message: String) {
+    chat.sendMessage(TwitchBotConfig.channel, message)
+    logger.info("Sent Twitch chat message: $message")
+}
 
 // Logging
 private const val LOG_DIRECTORY = "logs"

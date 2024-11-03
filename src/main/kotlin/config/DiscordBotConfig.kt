@@ -30,6 +30,8 @@ object DiscordBotConfig {
         load(discordBotConfigFile.inputStream())
     }
 
+    val discordToken = File("data\\tokens\\discordToken.txt").readText()
+
     var feedbackChannelId = try {
         Snowflake(
             getPropertyValue(
