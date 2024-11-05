@@ -1,3 +1,4 @@
+import dev.kord.common.entity.Snowflake
 import okhttp3.internal.toHexString
 import java.io.OutputStream
 import java.util.*
@@ -20,6 +21,20 @@ class MultiOutputStream(private vararg val streams: OutputStream) : OutputStream
         it.write(b, off, len)
     }
 }
+
+
+data class DiscordMessageContent (
+    val message: Message,
+    val title: String,
+    val user: String,
+    val channelId: Snowflake
+) {
+    sealed interface Message {
+        data class FromText(val text: String) : Message
+        data class FromLink(val link: String) : Message
+    }
+}
+
 
 /**
  * Adds quotation marks to the string. If the string is empty, it changes nothing.

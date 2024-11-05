@@ -5,8 +5,12 @@ import com.github.twitch4j.chat.TwitchChat
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent
 import com.github.twitch4j.common.enums.CommandPermission
 import config.ClipPlayerConfig
+import config.DiscordBotConfig
 import config.TwitchBotConfig
 import dev.kord.core.Kord
+import dev.kord.core.behavior.channel.createEmbed
+import dev.kord.core.entity.channel.TextChannel
+import dev.kord.core.supplier.EntitySupplyStrategy
 import handler.Command
 import handler.CommandHandlerScope
 import handler.commands
@@ -100,8 +104,8 @@ fun setupTwitchBot(discordClient: Kord, backgroundCoroutineScope: CoroutineScope
             messageEvent.user.id in TwitchBotConfig.blacklistedUsers
             ){
 
-            twitchClient.chat.sendMessage(
-                TwitchBotConfig.channel,
+            sendMessageToTwitchChatAndLogIt(
+                twitchClient.chat,
                 "Imagine not being a blacklisted user. Couldn't be you " +
                         "${messageEvent.user.name} ${TwitchBotConfig.blacklistEmote}"
             )
@@ -147,8 +151,8 @@ fun setupTwitchBot(discordClient: Kord, backgroundCoroutineScope: CoroutineScope
             val secondsUntilTimeoutOver = (nextAllowedGlobalCommandUsageInstant - Clock.System.now())
                 .inWholeSeconds.seconds
 
-            twitchClient.chat.sendMessage(
-                TwitchBotConfig.channel,
+            sendMessageToTwitchChatAndLogIt(
+                twitchClient.chat,
                 "The command is still on cooldown. Please try again in $secondsUntilTimeoutOver."
             )
             logger.info("Unable to execute command due to ongoing command cooldown.")
@@ -164,8 +168,8 @@ fun setupTwitchBot(discordClient: Kord, backgroundCoroutineScope: CoroutineScope
 
             val secondsUntilTimeoutOver = (nextAllowedCommandUsageInstant - Clock.System.now()).inWholeSeconds.seconds
 
-            twitchClient.chat.sendMessage(
-                TwitchBotConfig.channel,
+            sendMessageToTwitchChatAndLogIt(
+                twitchClient.chat,
                 "You are still on cooldown. Please try again in $secondsUntilTimeoutOver."
             )
             logger.info("Unable to execute command due to ongoing user cooldown.")
@@ -269,29 +273,48 @@ fun sendMessageToTwitchChatAndLogIt(chat: TwitchChat, message: String) {
     logger.info("Sent Twitch chat message: $message")
 }
 
-// Logging
-private const val LOG_DIRECTORY = "logs"
+
+// Discord functions
 /**
- * Sets up the logging process with {MultiOutputStream} to both console and log file
+ * Sends a message to a discord channel. The channel and contents are specified in discordMessageContent
+ * @param discordMessageContent {DiscordMessageContent} message content for the Discord message
+ * @return {TextChannel} the text channel the message was sent to on Discord
  */
-fun setupLogging() {
-    Files.createDirectories(Paths.get(LOG_DIRECTORY))
+suspend fun CommandHandlerScope.sendMessageToDiscordBot(discordMessageContent: DiscordMessageContent): TextChannel {
+    val user = discordMessageContent.user
+    val messageTitle = discordMessageContent.title
+    val message = discordMessageContent.message
 
-    val logFileName = DateTimeFormatterBuilder()
-        .appendInstant(0)
-        .toFormatter()
-        .format(Clock.System.now().toJavaInstant())
-        .replace(':', '-')
+    val channel = discordClient.getChannelOf<TextChannel>(
+        discordMessageContent.channelId, EntitySupplyStrategy.cacheWithCachingRestFallback
+    ) ?: error("Invalid channel ID.")
 
-    val logFile = Paths.get(LOG_DIRECTORY, "${logFileName}.log").toFile().also {
-        if (!it.exists()) {
-            it.createNewFile()
+    val channelName = channel.name
+    val channelId = channel.id
+
+    logger.info(
+        "User: $user | Title: $messageTitle | Message/Link: $message | Channel Name: $channelName | Channel ID: $channelId"
+    )
+
+    channel.createEmbed {
+        title = messageTitle + channelName
+        author {
+            name = "Twitch user $user"
         }
+        description = when (message) {
+            is DiscordMessageContent.Message.FromLink -> ""
+            is DiscordMessageContent.Message.FromText -> message.text
+        }
+        color = DiscordBotConfig.embedAccentColor
     }
 
-    System.setOut(PrintStream(MultiOutputStream(System.out, FileOutputStream(logFile))))
+    if (message is DiscordMessageContent.Message.FromLink) {
+        channel.createMessage(message.link)
+    }
 
-    logger.info("Log file ${logFile.name.addQuotationMarks()} has been created.")
+    logger.info("Embed/Message created on Discord Channel $channelName")
+
+    return channel
 }
 
 
@@ -343,4 +366,30 @@ fun createSaveDataFolder() {
         folder.mkdirs()
         logger.info("Created folder ${folder.name}")
     }
+}
+
+
+// Logging
+private const val LOG_DIRECTORY = "logs"
+/**
+ * Sets up the logging process with {MultiOutputStream} to both console and log file
+ */
+fun setupLogging() {
+    Files.createDirectories(Paths.get(LOG_DIRECTORY))
+
+    val logFileName = DateTimeFormatterBuilder()
+        .appendInstant(0)
+        .toFormatter()
+        .format(Clock.System.now().toJavaInstant())
+        .replace(':', '-')
+
+    val logFile = Paths.get(LOG_DIRECTORY, "${logFileName}.log").toFile().also {
+        if (!it.exists()) {
+            it.createNewFile()
+        }
+    }
+
+    System.setOut(PrintStream(MultiOutputStream(System.out, FileOutputStream(logFile))))
+
+    logger.info("Log file ${logFile.name.addQuotationMarks()} has been created.")
 }
