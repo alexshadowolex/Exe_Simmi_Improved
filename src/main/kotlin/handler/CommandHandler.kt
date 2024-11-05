@@ -2,6 +2,10 @@ package handler
 
 import com.github.twitch4j.chat.TwitchChat
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent
+import commands.feedbackCommand
+import commands.gameSuggestionCommand
+import commands.helpCommand
+import commands.sendClipCommand
 import dev.kord.core.Kord
 import kotlin.time.Duration
 
@@ -22,6 +26,9 @@ data class CommandHandlerScope(
     var addedCommandCooldown: Duration = Duration.ZERO
 )
 
-val commands = listOf<Command>(
-
+val commands = listOf(
+    helpCommand,
+    feedbackCommand,
+    gameSuggestionCommand,
+    sendClipCommand
 )

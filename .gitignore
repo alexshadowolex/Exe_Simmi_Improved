@@ -39,6 +39,7 @@ hs_err_pid*
 .idea/kotlinc.xml
 .idea/misc.xml
 .idea/vcs.xml
+.idea/uiDesigner.xml
 .run/desktop.run.xml
 *.iws
 *.iml
