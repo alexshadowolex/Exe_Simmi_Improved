@@ -1,10 +1,22 @@
 import com.github.twitch4j.TwitchClient
 import com.github.twitch4j.chat.TwitchChat
+import config.ClipPlayerConfig
 import config.TwitchBotConfig
 import dev.kord.core.Kord
+import io.ktor.server.application.*
+import io.ktor.server.cio.*
+import io.ktor.server.engine.*
+import io.ktor.server.http.content.*
+import io.ktor.server.plugins.autohead.*
+import io.ktor.server.plugins.partialcontent.*
+import io.ktor.server.routing.*
+import io.ktor.server.websocket.*
+import io.ktor.websocket.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.datetime.Clock
 import kotlinx.datetime.toJavaInstant
+import ui.clipOverlayPage
+import java.io.File
 import java.io.FileOutputStream
 import java.io.PrintStream
 import java.nio.file.Files
@@ -30,7 +42,35 @@ suspend fun setupTwitchBot(discordClient: Kord, backgroundCoroutineScope: Corout
  * Hosts the local clip player server.
  */
 fun hostClipPlayerServer() {
-    // TODO
+    embeddedServer(CIO, port = ClipPlayerConfig.port) {
+        install(WebSockets)
+        install(PartialContent)
+        install(AutoHeadResponse)
+
+        routing {
+            clipOverlayPage()
+
+            webSocket("/socket") {
+                val clipPlayerInstance = ClipPlayer.instance ?: run {
+                    close(CloseReason(CloseReason.Codes.INTERNAL_ERROR, "Clip player not setup."))
+                    logger.error("Clip player not setup.")
+                    return@webSocket
+                }
+
+                logger.info("Clip player got new connection.")
+
+                try {
+                    for (frame in incoming) {
+                        send(clipPlayerInstance.popNextRandomClip())
+                    }
+                } finally {
+                    logger.info("User disconnected from clip player.")
+                }
+            }
+
+            staticFiles("/video", File(ClipPlayerConfig.clipLocation))
+        }
+    }.start(wait = false)
 }
 
 

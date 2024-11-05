@@ -13,6 +13,7 @@ import dev.kord.gateway.PrivilegedIntent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import ui.app
 import java.io.PrintWriter
@@ -21,6 +22,9 @@ import kotlin.system.exitProcess
 
 val logger: org.slf4j.Logger = LoggerFactory.getLogger("Bot")
 val backgroundCoroutineScope = CoroutineScope(Dispatchers.IO)
+val json = Json {
+    prettyPrint = true
+}
 
 suspend fun main() = try {
     val discordClient = Kord(DiscordBotConfig.discordToken)
