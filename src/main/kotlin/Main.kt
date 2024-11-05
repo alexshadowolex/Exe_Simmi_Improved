@@ -27,6 +27,9 @@ val json = Json {
 }
 
 suspend fun main() = try {
+    setupLogging()
+    createSaveDataFolder()
+
     val discordClient = Kord(DiscordBotConfig.discordToken)
     CoroutineScope(discordClient.coroutineContext).launch {
         discordClient.login {
@@ -44,7 +47,7 @@ suspend fun main() = try {
     application {
         DisposableEffect(Unit) {
             onDispose {
-                sendMessageToTwitchChatAndLogIt(twitchClient!!.chat,"Bot shutting down ${TwitchBotConfig.leaveEmote}")
+                sendMessageToTwitchChatAndLogIt(twitchClient.chat,"Bot shutting down ${TwitchBotConfig.leaveEmote}")
                 logger.info("App shutting down...")
             }
         }
