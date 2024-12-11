@@ -5,10 +5,11 @@ import java.io.FileOutputStream
 import java.util.*
 
 plugins {
-    kotlin("jvm") version "1.9.22"
-    kotlin("plugin.serialization") version "1.9.22"
+    kotlin("jvm") version "2.1.0"
+    kotlin("plugin.serialization") version "2.1.0"
+    id("org.jetbrains.kotlin.plugin.compose") version "2.1.0" // this version matches your Kotlin version
 
-    id("org.jetbrains.compose") version "1.5.12"
+    id("org.jetbrains.compose") version "1.8.0-alpha01"
 }
 
 group = "exe.simmi.improved"
@@ -26,12 +27,10 @@ dependencies {
     implementation(compose.desktop.currentOs)
 
     implementation("org.slf4j:slf4j-simple:2.0.16")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
     implementation("com.github.kwhat:jnativehook:2.2.2")
     implementation("com.github.twitch4j:twitch4j:1.22.0")
     implementation("com.github.tkuenneth:nativeparameterstoreaccess:0.1.3")
 
-    implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
     implementation("io.ktor:ktor-server-core:$ktorVersion")
     implementation("io.ktor:ktor-server-cio:$ktorVersion")
     implementation("io.ktor:ktor-server-websockets:$ktorVersion")
