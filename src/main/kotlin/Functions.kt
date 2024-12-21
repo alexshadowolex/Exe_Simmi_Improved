@@ -4,6 +4,8 @@ import com.github.twitch4j.TwitchClientBuilder
 import com.github.twitch4j.chat.TwitchChat
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent
 import com.github.twitch4j.common.enums.CommandPermission
+import com.github.twitch4j.common.events.domain.EventUser
+import config.BuildInfo
 import config.ClipPlayerConfig
 import config.DiscordBotConfig
 import config.TwitchBotConfig
@@ -13,6 +15,7 @@ import dev.kord.core.entity.channel.TextChannel
 import dev.kord.core.supplier.EntitySupplyStrategy
 import handler.Command
 import handler.CommandHandlerScope
+import handler.RemindHandler
 import handler.commands
 import io.ktor.server.application.*
 import io.ktor.server.cio.*
@@ -60,14 +63,14 @@ fun setupTwitchBot(discordClient: Kord, backgroundCoroutineScope: CoroutineScope
     val commandsInUsage = mutableSetOf<Command>()
 
     // TODO
-    //val remindHandler = RemindHandler(chat = twitchClient.chat, reminderFile = File("data\\saveData\\reminders.json"), checkerScope = backgroundCoroutineScope)
+    val remindHandler = RemindHandler(chat = twitchClient.chat)
     //val runNamesRedeemHandler = RunNamesRedeemHandler(runNamesFile = File("data\\saveData\\runNames.json"))
     //SpreadSheetHandler.instance.setupConnectionAndLoadData(runNamesRedeemHandler)
 
     twitchClient.chat.run {
         connect()
         joinChannel(TwitchBotConfig.channel)
-        sendMessage(TwitchBotConfig.channel, "Bot running ${TwitchBotConfig.arriveEmote}")
+        sendMessageToTwitchChatAndLogIt(this, "Bot running ${TwitchBotConfig.arriveEmote}")
     }
 
     val channelID = twitchClient.helix.getUsers(
@@ -99,22 +102,13 @@ fun setupTwitchBot(discordClient: Kord, backgroundCoroutineScope: CoroutineScope
 
         // This feature has been built because of ShardZero abusing bot features.
         // The bot will not allow commands from blacklisted users
-        if(
-            messageEvent.user.name in TwitchBotConfig.blacklistedUsers ||
-            messageEvent.user.id in TwitchBotConfig.blacklistedUsers
-            ){
-
+        if(isUserInUsageList(messageEvent.user, TwitchBotConfig.blacklistedUsers, "any")){
             sendMessageToTwitchChatAndLogIt(
                 twitchClient.chat,
                 "Imagine not being a blacklisted user. Couldn't be you " +
                         "${messageEvent.user.name} ${TwitchBotConfig.blacklistEmote}"
             )
-            if(messageEvent.user.id !in TwitchBotConfig.blacklistedUsers) {
-                logger.warn(
-                    "Blacklisted user ${messageEvent.user.name} tried using a command. " +
-                    "Please use following ID in the properties file instead of the name: ${messageEvent.user.id}"
-                )
-            }
+
             return@onEvent
         }
 
@@ -181,9 +175,9 @@ fun setupTwitchBot(discordClient: Kord, backgroundCoroutineScope: CoroutineScope
         val commandHandlerScope = CommandHandlerScope(
             discordClient = discordClient,
             chat = twitchClient.chat,
-            messageEvent = messageEvent
+            messageEvent = messageEvent,
             // TODO
-            //remindHandler = remindHandler,
+            remindHandler = remindHandler
             //runNamesRedeemHandler = runNamesRedeemHandler
         )
 
@@ -271,6 +265,37 @@ fun hostClipPlayerServer() {
 fun sendMessageToTwitchChatAndLogIt(chat: TwitchChat, message: String) {
     chat.sendMessage(TwitchBotConfig.channel, message)
     logger.info("Sent Twitch chat message: $message")
+}
+
+
+/**
+ * Checks if a user is in a specified usage list, e.g. blacklisted users.
+ * If the name is included in the list but not the ID, a message containing the ID will be logged.
+ * @param user User to check for
+ * @param usageList List to check
+ * @param commandName Name of the command to log it
+ * @return true, when either the ID or the name is inside that list. Else false
+ */
+fun isUserInUsageList(user: EventUser, usageList: List<String>, commandName: String): Boolean {
+    return (user.name in usageList || user.id in usageList).also {
+        // TODO: Check if this can be replaced by automatic handling
+        if (it && user.id !in usageList) {
+            logger.warn(
+                "User ${user.name} used the $commandName command. Please use following ID in " +
+                "the properties file instead of the name: ${user.id}"
+            )
+        }
+    }
+}
+
+
+/**
+ * Checks if the username is the broadcaster's name.
+ * @param userName The username to check for
+ * @return true, if it is the broadcaster's name, else false
+ */
+fun isUserTheBroadcaster(userName: String): Boolean {
+    return userName == TwitchBotConfig.channel
 }
 
 
@@ -392,4 +417,5 @@ fun setupLogging() {
     System.setOut(PrintStream(MultiOutputStream(System.out, FileOutputStream(logFile))))
 
     logger.info("Log file ${logFile.name.addQuotationMarks()} has been created.")
+    logger.info("Bot Version: v${BuildInfo.version}")
 }
